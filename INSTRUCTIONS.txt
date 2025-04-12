@@ -1,0 +1,76 @@
+avvia docker desktop, assicurati che stia runnando
+
+python .\main.py --city Zwolle --flag ALL --scenario blabla --mod_file .\modifications.txt
+
+
+
+city = indica la città usando lo stesso nome di OpenStreetMap
+flag =  ALL,CITY,SCENARIO
+	ALL  scarica cità base + genera scenario
+	CITY solo città base
+	SCENARIO genera solo scenario  ( devi aver già scaricato la città base in precedenza )
+scenario = appendice del nome del file .gis per lo scenario (il nome che vuoi abbia il file .gis di output)
+mod_file = file con le regole di modifica della mappa
+
+
+
+REGOLE SINTASSI:
+==,!=,>=,<=,>,<   per comparazione
++=,-=             per incr/decr emento
+==                per assegnazione
+if … then …       per condizioni
+
+
+NOTE: le modifiche sono apportate una regola alla volta, quindi si possono sovrascrivere. quindi non devono essere ambigue.
+
+
+RULES
+Modification Rules Manual
+-------------------------
+Supported operations (all keywords MUST be in CAPITALS):
+ 
+Unconditional Rules:
+  1. Assignment:
+       key=value
+     (Sets the tag <key> to <value> only if the tag already exists. If the tag does not exist, the rule is skipped.
+      Note: '==' is reserved for conditionals.)
+  2. Numeric Modification:
+       key+=value   or   key-=value
+     (Increments or decrements the numeric value of the tag <key> by <value>.
+      If the tag does not exist, the rule is skipped.)
+  3. ADD Operation:
+       ADD <tag_key>=<value>
+     (Adds the tag <tag_key> with the specified <value> only if it does not already exist.)
+  4. REMOVE Operation:
+       REMOVE <tag_key>
+     (Removes the tag <tag_key> from the way if it exists.)
+  5. UPDATE Operation:
+       UPDATE <tag_key> TO <value>
+     (Updates the tag <tag_key> to <value>. If the tag does not exist, it is created.)
+  6. DONOTHING Operation:
+       DONOTHING
+     (Does not perform any action; useful for explicitly having no operation in a conditional ELSE clause.)
+
+ 
+Conditional Rules:
+  Use the following syntax to combine conditions with THEN an action and optionally ELSE an alternate action:
+       IF <cond1> [AND/OR <cond2> ...] THEN <action> [ELSE <alternate_action>]
+  - Each condition can be one of:
+         tag_key [==, !=, >=, <=, >, <] value
+     OR, to check for the absence of a tag:
+         NOTEXISTS <tag_key>
+  - The THEN action and optional ELSE action can be any of the operations above (ASSIGN, INCREMENT, DECREMENT, ADD, REMOVE, UPDATE).
+  Example:
+       IF lanes>1 AND NOTEXISTS height THEN ADD height=5 ELSE UPDATE lanes TO 2
+ 
+Frequency-based Execution:
+  You can append a frequency specifier to any rule to have it applied only a fraction of the times.
+  The syntax is:
+       FREQ <numerator>/<denom>
+  For example:
+       UPDATE maxspeed TO 50 FREQ 0.5/1
+  This means the update will be applied approximately 50% of the times. FREQ is applied to the WHOLE rule, not to specific IF/ELSE conditions
+ 
+Notes:
+ - All COMMANDS must be written in CAPITALS where specified (e.g. IF, THEN, ELSE, ADD, REMOVE, UPDATE, NOTEXISTS, FREQ, AND, OR).
+ - Frequency rules work with both unconditional and conditional operations.

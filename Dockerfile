@@ -24,4 +24,4 @@ RUN apt update && \
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT [ "python", "./generate_index.py" ]
+ENTRYPOINT [ "python", "./generate_index.py", "--loglevel", "4" ]

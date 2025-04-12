@@ -1108,6 +1108,71 @@ ALTER TABLE network_edge_attributes_tmp RENAME TO network_edge_attributes;
 
 DROP TABLE noise_intersection, noise_sum;
 {% endif %}
+
+
+-- -------------------------------------------------------------------------------------------------------------------
+-- calcola indicator parking e il piccione di tua mamma
+-- ------------------------------------------------------------------------------------------------------------------
+
+
+DROP TABLE IF EXISTS parking;
+CREATE TABLE parking AS (
+    SELECT edge_id,
+        CASE
+            -- Dedicated parking amenity (e.g., parking lanes along streets)
+            WHEN amenity = 'parking'
+                 AND tags -> 'parking' IN ('lane', 'street_side', 'on_kerb', 'half_on_kerb')
+                THEN 'parking_amenity'
+
+            -- Parking on both sides (using :both tags or explicit left AND right tags)
+            WHEN highway IS NOT NULL AND (
+                    (tags -> 'parking:lane:both' IN ('parallel', 'diagonal', 'perpendicular', 'marked', 'separate', 'yes'))
+                    OR (tags -> 'parking:both' IN ('lane', 'street_side', 'on_kerb', 'half_on_kerb', 'shoulder', 'separate', 'yes'))
+                    OR (
+                        tags -> 'parking:lane:left' IN ('parallel', 'diagonal', 'perpendicular', 'marked', 'separate', 'yes')
+                        AND tags -> 'parking:lane:right' IN ('parallel', 'diagonal', 'perpendicular', 'marked', 'separate', 'yes')
+                    )
+                    OR (
+                        tags -> 'parking:left' IN ('lane', 'street_side', 'on_kerb', 'half_on_kerb', 'shoulder', 'separate', 'yes')
+                        AND tags -> 'parking:right' IN ('lane', 'street_side', 'on_kerb', 'half_on_kerb', 'shoulder', 'separate', 'yes')
+                    )
+            ) THEN 'parking_both'
+
+            -- Parking on one side (left OR right, but not both)
+            WHEN highway IS NOT NULL AND (
+                    tags -> 'parking:lane:right' IN ('parallel', 'diagonal', 'perpendicular', 'marked', 'separate', 'yes')
+                    OR tags -> 'parking:lane:left' IN ('parallel', 'diagonal', 'perpendicular', 'marked', 'separate', 'yes')
+                    OR tags -> 'parking:right' IN ('lane', 'street_side', 'on_kerb', 'half_on_kerb', 'shoulder', 'separate', 'yes')
+                    OR tags -> 'parking:left' IN ('lane', 'street_side', 'on_kerb', 'half_on_kerb', 'shoulder', 'separate', 'yes')
+            ) THEN 'parking_one_side'
+
+            -- Default: no parking information available
+            ELSE 'no_parking'
+        END AS parking
+    FROM network_edge
+);
+
+ALTER TABLE network_edge_attributes DROP COLUMN IF EXISTS parking_ft;
+ALTER TABLE network_edge_attributes DROP COLUMN IF EXISTS parking_tf;
+
+DROP TABLE IF EXISTS network_edge_attributes_tmp;
+CREATE TABLE network_edge_attributes_tmp AS (
+    SELECT a.*,
+           b.parking AS parking_tf,
+           b.parking AS parking_ft
+    FROM network_edge_attributes a
+        LEFT JOIN parking b USING (edge_id)
+);
+
+DROP TABLE network_edge_attributes;
+ALTER TABLE network_edge_attributes_tmp RENAME TO network_edge_attributes;
+
+DROP TABLE parking;
+
+-- ---------------------------------------------------------------------------------------------------------------------
+
+
+
 -- ---------------------------------------------------------------------------------------------------------------------
 -- add missing columns and primary keys
 -- ---------------------------------------------------------------------------------------------------------------------

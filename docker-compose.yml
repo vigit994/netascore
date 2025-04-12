@@ -1,9 +1,10 @@
-version: "3"
+
 
 services:
   netascore:
-    image: plusmobilitylab/netascore:latest
+    image: netascore
     build: .
+    #image: plusmobilitylab/netascore:local  # Name the locally built image
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     environment:
@@ -29,3 +30,14 @@ services:
       interval: 10s
       timeout: 20s
       retries: 120
+
+  pgadmin:
+      image: dpage/pgadmin4
+      environment:
+        - PGADMIN_DEFAULT_EMAIL=your_email@example.com
+        - PGADMIN_DEFAULT_PASSWORD=your_password
+      ports:
+        - "8080:80"
+      depends_on:
+        netascore-db:
+          condition: service_healthy

@@ -1,0 +1,13 @@
+# IF highway==residential OR highway==tertiary THEN UPDATE maxspeed TO 300
+# IF surface==asphalt THEN surface=paving_stones ELSE surface=tiles
+# highway=primary FREQ 0.75/1
+# ADD sidewalk=both FREQ 0.75/1
+# IF NOTEXISTS oneway THEN ADD oneway=reversible  FREQ 0.75/1
+
+# IF NOTEXISTS parking:both THEN DONOTHING ELSE REMOVE parking:both AND ADD parking:right=lane AND ADD sidewalk=left
+
+#IF highway == residential THEN ADD cycleway = shared_lane
+
+IF highway == residential THEN REMOVE parking:both FREQ 0.25/1
+IF osm_id == 6503856 THEN REMOVE parking:both
+
