@@ -42,8 +42,9 @@ Conditional Rules:
        IF <cond1> [AND/OR <cond2> ...] THEN <action> [ELSE <alternate_action>]
   - Each condition can be one of:
          tag_key [==, !=, >=, <=, >, <] value
-     OR, to check for the absence of a tag:
+     OR, to check for the absence/presence of a tag:
          NOTEXISTS <tag_key>
+         EXISTS <tag_key>
   - The THEN action and optional ELSE action can be any of the operations above (ASSIGN, INCREMENT, DECREMENT, ADD, REMOVE, UPDATE).
   Example:
        IF LANES>1 AND NOTEXISTS HEIGHT THEN ADD HEIGHT=5 ELSE UPDATE LANES TO 2
@@ -57,7 +58,7 @@ Frequency-based Execution:
   This means the update will be applied approximately 50% of the times.
  
 Notes:
- - All commands must be written in CAPITALS where specified (e.g. IF, THEN, ELSE, ADD, REMOVE, UPDATE, NOTEXISTS, FREQ, AND, OR).
+ - All commands must be written in CAPITALS where specified (e.g. IF, THEN, ELSE, ADD, REMOVE, UPDATE, EXISTS, NOTEXISTS, FREQ, AND, OR).
  - Frequency rules work with both unconditional and conditional operations.
 """
     print(manual)
@@ -313,12 +314,16 @@ def evaluate_single_condition(way, condition_str, original_line):
     Evaluate a single condition string against the provided way.
     Supported forms:
       - NOTEXISTS <tag_key>
+      - EXISTS <tag_key>
       - <tag_key> [==, !=, >=, <=, >, <] <value>
     Exits if the condition is invalid.
     """
     if condition_str.startswith("NOTEXISTS "):
         tag_key = condition_str[len("NOTEXISTS "):].strip()
         return (len(way.findall(f"tag[@k='{tag_key}']")) == 0)
+    if condition_str.startswith("EXISTS "):
+        tag_key = condition_str[len("EXISTS "):].strip()
+        return (len(way.findall(f"tag[@k='{tag_key}']")) == 1)
     m = re.match(r'^(\S+)\s*(==|!=|>=|<=|>|<)\s*(\S+)$', condition_str)
     if not m:
         print(f"Error: Invalid condition '{condition_str}' in rule: {original_line}")
@@ -392,14 +397,14 @@ def parse_modification_rules(file_path):
     rules = []
     with open(file_path, 'r') as f:
         for orig_line in f:
-            original_line = orig_line.strip()
+            original_line = orig_line.strip().replace("\\xa0", ' ')
             if not original_line or original_line.startswith('#'):
                 continue
 
             # Check for frequency specifier.
             freq = None
-            if " FREQ " in original_line:
-                parts = original_line.split(" FREQ ")
+            if "FREQ" in original_line:
+                parts = original_line.split("FREQ")
                 line = parts[0].strip()
                 freq_str = parts[1].strip()
                 try:
